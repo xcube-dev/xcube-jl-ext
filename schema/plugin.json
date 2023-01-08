@@ -1,0 +1,8 @@
+{
+  "jupyter.lab.shortcuts": [],
+  "title": "xcube-jl-ext",
+  "description": "xcube-jl-ext settings.",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}
