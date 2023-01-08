@@ -1,8 +1,9 @@
 {
   "name": "xcube-jl-ext",
   "version": "0.1.1",
-  "description": "xcube Jupyter Lab integration",
+  "description": "xcube JupyterLab integration",
   "keywords": [
+    "xcube",
     "jupyter",
     "jupyterlab",
     "jupyterlab-extension"

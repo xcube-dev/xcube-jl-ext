@@ -1,7 +1,7 @@
 # xcube_jl_ext
 
 [![Github Actions Status](https://github.com/dcs4cop/xcube-jl-ext/workflows/Build/badge.svg)](https://github.com/dcs4cop/xcube-jl-ext/actions/workflows/build.yml)
-xcube Jupyter Lab integration
+xcube JupyterLab integration
 
 This extension is composed of a Python package named `xcube_jl_ext`
 for the server extension and a NPM package named `xcube-jl-ext`
