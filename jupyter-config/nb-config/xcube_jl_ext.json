@@ -1,0 +1,7 @@
+{
+  "NotebookApp": {
+    "nbserver_extensions": {
+      "xcube_jl_ext": true
+    }
+  }
+}

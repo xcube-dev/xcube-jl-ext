@@ -1,0 +1,7 @@
+{
+  "ServerApp": {
+    "jpserver_extensions": {
+      "xcube_jl_ext": true
+    }
+  }
+}
