@@ -44,7 +44,7 @@ async function activate(
         })
         .catch(reason => {
             console.error(
-                `The xcube_jl_ext server extension appears to be missing.\n${reason}`
+                `xcube_jl_ext server extension problem:\n${reason}`
             );
         });
 
@@ -52,7 +52,7 @@ async function activate(
         settingRegistry
             .load(plugin.id)
             .then(settings => {
-                console.log(
+                console.debug(
                     "xcube-jl-ext settings loaded:",
                     settings.composite
                 );
@@ -76,6 +76,23 @@ async function activate(
         iconClass: (args: any) => (args["isPalette"] ? "" : "xcube-icon"),
         execute: () => {
             if (widget === null || widget.isDisposed) {
+                console.debug("Creating new JupyterLab widget xcube-jl-ext");
+
+                requestAPI<any>('server', {}, settings)
+                    .then(serverInfo => {
+                        console.debug("Server info:", serverInfo);
+                        if (serverInfo.pid === null || serverInfo.code !== null) {
+                            console.debug("Starting new server");
+                            requestAPI<any>('server', {method: "PUT"}, settings)
+                                .then(serverInfo => {
+                                    console.debug("Server started", serverInfo);
+                                })
+                                .catch(reason => {
+                                    console.error("Failed to start server", reason);
+                                });
+                        }
+                    });
+
                 // Create a blank content widget inside of a MainAreaWidget
                 const content = new Widget();
                 const iframe = document.createElement('iframe');
@@ -83,8 +100,8 @@ async function activate(
                 iframe.style.width = "100%";
                 iframe.style.height = "100%";
                 iframe.style.border = "none";
-                iframe.src = "https://viewer.earthsystemdatalab.net/";
-                // iframe.src = "http://localhost:8080/viewer/";
+                // iframe.src = "https://viewer.earthsystemdatalab.net/";
+                iframe.src = "http://127.0.0.1:8090/viewer/?serverUrl=http://127.0.0.1:8090";
                 content.node.appendChild(iframe);
 
                 widget = new MainAreaWidget({content});
@@ -95,11 +112,11 @@ async function activate(
             if (tracker !== null && !tracker.has(widget)) {
                 // Track the state of the widget for later restoration
                 tracker.add(widget).then(() => {
+                    console.debug('JupyterLab widget xcube-jl-ext stored!');
                 });
             }
             if (!widget.isAttached) {
                 // Attach the widget to the main work area if it's not there
-                // eslint-disable-next-line
                 app.shell.add(widget, "main");
             }
             // Activate the widget
@@ -133,6 +150,7 @@ async function activate(
             command: commandID,
             name: () => "xcube"
         }).then(() => {
+            console.debug('JupyterLab widget xcube-jl-ext restored!');
         });
     }
 

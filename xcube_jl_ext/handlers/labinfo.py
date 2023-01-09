@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 import tornado
 import tornado.escape
@@ -7,11 +6,10 @@ import tornado.httpclient
 import tornado.httputil
 import tornado.web
 from jupyter_server.base.handlers import APIHandler
-from jupyter_server.utils import url_path_join
 
-config_path = Path("~").expanduser() / ".xcube"
-lab_info_path = config_path / "lab-info.json"
-lab_url_key = "lab_url"
+from ..config import data_path
+from ..config import lab_info_path
+from ..config import lab_url_key
 
 
 # noinspection PyAbstractClass
@@ -25,8 +23,8 @@ class LabInfoHandler(APIHandler):
 
     # @tornado.web.authenticated
     def put(self):
-        if not config_path.is_dir():
-            config_path.mkdir()
+        if not data_path.is_dir():
+            data_path.mkdir()
         lab_info = tornado.escape.json_decode(self.request.body)
         self._validate_lab_info(lab_info)
         with lab_info_path.open(mode="w") as f:
@@ -56,30 +54,3 @@ class LabInfoHandler(APIHandler):
             raise tornado.web.HTTPError(
                 400, reason="Missing or invalid Lab info in request body"
             )
-
-
-# noinspection PyAbstractClass
-class ServerHandler(APIHandler):
-    # @tornado.web.authenticated
-    def get(self):
-        # TODO
-        pass
-
-    # @tornado.web.authenticated
-    def put(self):
-        # TODO
-        pass
-
-    # @tornado.web.authenticated
-    def delete(self):
-        # TODO
-        pass
-
-
-def setup_handlers(web_app):
-    host_pattern = ".*$"
-    base_url = web_app.settings["base_url"]
-    web_app.add_handlers(host_pattern, [
-        (url_path_join(base_url, "xcube", "labinfo"), LabInfoHandler),
-        (url_path_join(base_url, "xcube", "server"), ServerHandler),
-    ])
