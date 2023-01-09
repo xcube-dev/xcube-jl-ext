@@ -1,15 +1,16 @@
 import json
 import subprocess
+from typing import Any, Dict
 
 import psutil
+import tornado.web
 from jupyter_server.base.handlers import APIHandler
 
 from ..config import default_server_config
+from ..config import default_server_port
 from ..config import server_config_file
+from ..config import server_info_file
 from ..config import server_log_file
-from ..config import server_state_file
-
-PORT = 8092
 
 
 # noinspection PyAbstractClass
@@ -17,29 +18,30 @@ class ServerHandler(APIHandler):
 
     # @tornado.web.authenticated
     def get(self):
-        server_state = self._load_server_state()
-        pid = server_state.get("pid")
-        if isinstance(pid, int):
-            server_state = self._get_server_state(server_state,
-                                                  psutil.Process(pid))
+        server_info = self._load_server_info()
+        server_state = self._get_server_state(server_info)
         self.finish(server_state)
 
     # @tornado.web.authenticated
-    # noinspection PyAttributeOutsideInit
     def put(self):
-        server_state = self._load_server_state()
-        pid = server_state.get("pid")
-        if isinstance(pid, int):
-            process = psutil.Process(pid)
-            if process.status() == "running":
-                server_state = self._get_server_state(server_state, process)
-                self.finish(server_state)
-                return
+        server_info = self._load_server_info()
+        server_state = self._get_server_state(server_info)
+        if server_state.get("status") != "running":
+            server_info = self._start_server()
+            server_state = self._get_server_state(server_info)
+        self.finish(server_state)
 
+    # @tornado.web.authenticated
+    def delete(self):
+        server_info = self._load_server_info()
+        self._stop_server(server_info)
+        self.finish({})
+
+    def _start_server(self):
         if not server_config_file.exists():
             with server_config_file.open("w") as f:
                 f.write(default_server_config)
-        port = PORT
+        port = default_server_port
         cmd = [
             "xcube",
             "--logfile", f"{server_log_file}",
@@ -50,44 +52,49 @@ class ServerHandler(APIHandler):
             "--config", f"{server_config_file}"
         ]
         process = subprocess.Popen(cmd)
-        server_state = self._dump_server_state(process.pid, port)
-        server_state = self._get_server_state(server_state,
-                                              psutil.Process(process.pid))
-        self.finish(server_state)
-
-    # @tornado.web.authenticated
-    def delete(self):
-        server_state = self._load_server_state()
-        pid = server_state.get("pid")
-        if isinstance(pid, int):
-            process = psutil.Process(pid)
-            process.terminate()
-        server_state_file.unlink()
-        self.finish({})
+        server_server_info = self._dump_server_info(process.pid, port)
+        return server_server_info
 
     @staticmethod
-    def _dump_server_state(pid: int, port: int):
-        server_state = {
+    def _stop_server(server_info: Dict[str, Any]):
+        pid = server_info.get("pid")
+        if isinstance(pid, int):
+            try:
+                process = psutil.Process(pid)
+                process.terminate()
+            except psutil.NoSuchProcess:
+                pass
+        server_info_file.unlink()
+
+    @staticmethod
+    def _dump_server_info(pid: int, port: int) -> Dict[str, Any]:
+        server_info = {
             "pid": pid,
             "port": port,
         }
-        with server_state_file.open("w") as fp:
-            json.dump(server_state, fp)
-        return server_state
+        with server_info_file.open("w") as fp:
+            json.dump(server_info, fp)
+        return server_info
 
     @staticmethod
-    def _load_server_state():
-        if server_state_file.exists():
-            with server_state_file.open() as fp:
+    def _load_server_info() -> Dict[str, Any]:
+        if server_info_file.exists():
+            with server_info_file.open() as fp:
                 return json.load(fp)
         return {}
 
     @staticmethod
-    def _get_server_state(server_state, process):
-        server_state = {
-            "status": process.status(),
-            "name": process.name(),
-            "username": process.username(),
-            **server_state
-        }
-        return server_state
+    def _get_server_state(server_state: Dict[str, Any]) -> Dict[str, Any]:
+        pid = server_state.get("pid")
+        if isinstance(pid, int):
+            try:
+                process = psutil.Process(pid)
+                return {
+                    "status": process.status(),
+                    "name": process.name(),
+                    "username": process.username(),
+                    **server_state
+                }
+            except psutil.NoSuchProcess:
+                pass
+        return {}

@@ -65,6 +65,27 @@ async function activate(
             });
     }
 
+    const getLocalServerUrl = async (): Promise<string> => {
+        const serverState = await requestAPI<any>('server', {method: "PUT"}, settings);
+        console.debug("xcube-jl-ext server state:", serverState);
+        const port = serverState.port;
+        const serverUrl = `http://127.0.0.1:${port}`;
+        let error;
+        for (let i = 0; i < 100; i++) {
+            try {
+                const response = await fetch(serverUrl, {});
+                if (response.ok) {
+                    return serverUrl;
+                }
+                error = response.statusText;
+            } catch (e) {
+                error = e;
+                console.error(e);
+            }
+        }
+        throw new Error(error);
+    }
+
     let widget: MainAreaWidget | null = null;
     let tracker: WidgetTracker<MainAreaWidget> | null = null;
 
@@ -74,24 +95,11 @@ async function activate(
     app.commands.addCommand(commandID, {
         label: "xcube Viewer",
         iconClass: (args: any) => (args["isPalette"] ? "" : "xcube-icon"),
-        execute: () => {
+        execute: async () => {
             if (widget === null || widget.isDisposed) {
                 console.debug("Creating new JupyterLab widget xcube-jl-ext");
 
-                requestAPI<any>('server', {}, settings)
-                    .then(serverInfo => {
-                        console.debug("Server info:", serverInfo);
-                        if (serverInfo.pid === null || serverInfo.code !== null) {
-                            console.debug("Starting new server");
-                            requestAPI<any>('server', {method: "PUT"}, settings)
-                                .then(serverInfo => {
-                                    console.debug("Server started", serverInfo);
-                                })
-                                .catch(reason => {
-                                    console.error("Failed to start server", reason);
-                                });
-                        }
-                    });
+                const serverUrl = await getLocalServerUrl();
 
                 // Create a blank content widget inside of a MainAreaWidget
                 const content = new Widget();
@@ -101,7 +109,7 @@ async function activate(
                 iframe.style.height = "100%";
                 iframe.style.border = "none";
                 // iframe.src = "https://viewer.earthsystemdatalab.net/";
-                iframe.src = "http://127.0.0.1:8090/viewer/?serverUrl=http://127.0.0.1:8090";
+                iframe.src = `${serverUrl}/viewer/?serverUrl=${serverUrl}`;
                 content.node.appendChild(iframe);
 
                 widget = new MainAreaWidget({content});

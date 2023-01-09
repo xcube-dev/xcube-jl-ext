@@ -4,12 +4,13 @@ data_path = Path("~").expanduser() / ".xcube"
 lab_info_path = data_path / "lab-info.json"
 lab_url_key = "lab_url"
 
-server_state_file = data_path / "server-state.json"
+server_info_file = data_path / "server-info.json"
 
 server_log_file = data_path / "server-log.txt"
 
 server_config_file = Path(".") / "xcube-server.yaml"
 
+default_server_port = 9192
 
 default_server_config = """
 # xcube Server configuration file
