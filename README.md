@@ -1,11 +1,17 @@
 # xcube_jl_ext
 
 [![Github Actions Status](https://github.com/dcs4cop/xcube-jl-ext/workflows/Build/badge.svg)](https://github.com/dcs4cop/xcube-jl-ext/actions/workflows/build.yml)
-xcube JupyterLab integration
+[xcube](https://github.com/dcs4cop/xcube) JupyterLab integration
 
 This extension is composed of a Python package named `xcube_jl_ext`
-for the server extension and a NPM package named `xcube-jl-ext`
-for the frontend extension.
+for the JupyterLab server extension and a NPM package named `xcube-jl-ext`
+for the JupyterLab frontend extension.
+
+The extension adds the following features to JupyterLab:
+
+1. Allows running a configurable xcube Viewer as widget in the JupyterLab.
+2. Allows using xcube Server and Viewer from within Jupyter Notebooks, 
+   even if JupyterLab is running remotely, i.e., spawned by JupyterHub.
 
 ## Requirements
 
