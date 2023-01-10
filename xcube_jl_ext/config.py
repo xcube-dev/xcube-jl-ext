@@ -3,6 +3,7 @@ from pathlib import Path
 data_path = Path("~").expanduser() / ".xcube"
 lab_info_path = data_path / "lab-info.json"
 lab_url_key = "lab_url"
+has_proxy_key = "has_proxy"
 
 server_info_file = data_path / "server-info.json"
 

@@ -1,4 +1,7 @@
+import importlib.metadata
 import json
+import sys
+from pathlib import Path
 
 import tornado
 import tornado.escape
@@ -8,6 +11,7 @@ import tornado.web
 from jupyter_server.base.handlers import APIHandler
 
 from ..config import data_path
+from ..config import has_proxy_key
 from ..config import lab_info_path
 from ..config import lab_url_key
 
@@ -27,6 +31,7 @@ class LabInfoHandler(APIHandler):
             data_path.mkdir()
         lab_info = tornado.escape.json_decode(self.request.body)
         self._validate_lab_info(lab_info)
+        lab_info[has_proxy_key] = self._has_jupyter_server_proxy()
         with lab_info_path.open(mode="w") as f:
             json.dump(lab_info, f, indent=2)
         self.finish(lab_info)
@@ -54,3 +59,37 @@ class LabInfoHandler(APIHandler):
             raise tornado.web.HTTPError(
                 400, reason="Missing or invalid Lab info in request body"
             )
+
+    @staticmethod
+    def _has_jupyter_server_proxy():
+        # Is it installed?
+        try:
+            importlib.metadata.version("jupyter-server-proxy")
+        except importlib.metadata.PackageNotFoundError:
+            return False
+        # Is it installed?
+        frontend_dir = Path(sys.prefix,
+                            "share", "jupyter", "labextensions",
+                            "@jupyterlab", "server-proxy")
+        if not frontend_dir.is_dir():
+            return False
+
+        # Ok,jupyter-server-proxy is installed.
+        # Now check whether it is disabled.
+        is_disabled = False
+
+        # File page_config.json will only exist,
+        # if @jupyterlab/server-proxy has been disabled once.
+        page_config_file = Path(sys.prefix,
+                                "etc", "jupyter", "labconfig",
+                                "page_config.json")
+        if page_config_file.is_file():
+            with page_config_file.open() as fp:
+                page_config = json.load(fp)
+            try:
+                is_disabled = page_config.get("disabledExtensions", {}).get(
+                    "@jupyterlab/server-proxy", False)
+            except AttributeError:
+                pass
+
+        return is_disabled
