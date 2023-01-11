@@ -16,6 +16,7 @@ The extension adds the following features to JupyterLab:
 ## Requirements
 
 - JupyterLab >= 3.0
+- xcube >= 0.13
 
 ## Install
 
@@ -48,6 +49,17 @@ the frontend extension, check the frontend extension is installed:
 ```bash
 jupyter labextension list
 ```
+
+## Development
+
+Make sure to have a source installation 
+of [xcube](https://github.com/dcs4cop/xcube) in an 
+xcube Python environment. Activate environment:
+
+```bash
+conda activate xcube
+```
+...
 
 ## Contributing
 
