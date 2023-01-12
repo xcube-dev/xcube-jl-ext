@@ -59,7 +59,40 @@ xcube Python environment. Activate environment:
 ```bash
 conda activate xcube
 ```
-...
+
+Install the initial project dependencies and install the extension into 
+the JupyterLab environment. Copy the frontend part of the extension into 
+JupyterLab. We can run this pip install command again every time we make 
+a change to copy the change into JupyterLab.
+
+```bash
+pip install -ve .
+```
+
+Create a symbolic link from JupyterLab to our source directory. 
+This means our changes are automatically available in JupyterLab:
+
+```bash
+jupyter labextension develop --overwrite .
+```
+
+Run the following to rebuild your extension. This will be required
+after any changes of `package.json` or changes of frontend TypeScript 
+files other resources.
+
+```bash
+jlpm run build
+```
+
+If you wish to avoid building after each change, you can run the 
+
+```bash
+jlpm run watch
+```
+
+from your extension directory in another terminal. 
+This will automatically compile the TypeScript files as they 
+are changed and saved.
 
 ## Contributing
 

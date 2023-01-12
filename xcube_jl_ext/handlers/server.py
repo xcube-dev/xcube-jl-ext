@@ -2,9 +2,8 @@ import json
 import subprocess
 from typing import Any, Dict
 
+import jupyter_server.base.handlers
 import psutil
-import tornado.web
-from jupyter_server.base.handlers import APIHandler
 
 from ..config import default_server_config
 from ..config import default_server_port
@@ -14,7 +13,7 @@ from ..config import server_log_file
 
 
 # noinspection PyAbstractClass
-class ServerHandler(APIHandler):
+class ServerHandler(jupyter_server.base.handlers.APIHandler):
 
     # @tornado.web.authenticated
     def get(self):

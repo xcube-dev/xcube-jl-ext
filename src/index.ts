@@ -28,6 +28,8 @@ async function activate(
     const settings = ServerConnection.makeSettings();
     console.debug("  serverSettings:", settings);
 
+    let hasServerProxy: boolean | undefined;
+
     const request = {
         method: "PUT",
         headers: {
@@ -39,8 +41,9 @@ async function activate(
     };
 
     requestAPI<any>('labinfo', request, settings)
-        .then(data => {
-            console.log(data);
+        .then(labInfo => {
+            console.log(labInfo);
+            hasServerProxy = labInfo.has_proxy;
         })
         .catch(reason => {
             console.error(
@@ -69,7 +72,9 @@ async function activate(
         const serverState = await requestAPI<any>('server', {method: "PUT"}, settings);
         console.debug("xcube-jl-ext server state:", serverState);
         const port = serverState.port;
-        const serverUrl = `http://127.0.0.1:${port}`;
+        const serverUrl = hasServerProxy
+            ? `${settings.baseUrl}proxy/${port}`
+            : `http://127.0.0.1:${port}`;
         let error;
         for (let i = 0; i < 100; i++) {
             try {
@@ -109,7 +114,9 @@ async function activate(
                 iframe.style.height = "100%";
                 iframe.style.border = "none";
                 // iframe.src = "https://viewer.earthsystemdatalab.net/";
-                iframe.src = `${serverUrl}/viewer/?serverUrl=${serverUrl}`;
+                iframe.src = `${serverUrl}/viewer/?serverUrl=${serverUrl}`
+                    + "&serverName=xcube+JupyterLab+Integration"
+                    + "&serverId=jupyterlab";
                 content.node.appendChild(iframe);
 
                 widget = new MainAreaWidget({content});
