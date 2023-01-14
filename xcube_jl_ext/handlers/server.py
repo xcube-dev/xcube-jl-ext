@@ -7,6 +7,7 @@ import psutil
 
 from ..config import default_server_config
 from ..config import default_server_port
+from ..config import is_jupyter_server_proxy_enabled
 from ..config import server_config_file
 from ..config import server_info_file
 from ..config import server_log_file
@@ -40,17 +41,35 @@ class ServerHandler(jupyter_server.base.handlers.APIHandler):
         if not server_config_file.exists():
             with server_config_file.open("w") as f:
                 f.write(default_server_config)
+
         port = default_server_port
+
         cmd = [
             "xcube",
             "--logfile", f"{server_log_file}",
             "--loglevel", "DETAIL",
             "serve",
             "-v",
+            "--config", f"{server_config_file}",
             "--port", f"{port}",
-            "--config", f"{server_config_file}"
         ]
-        process = subprocess.Popen(cmd)
+        if is_jupyter_server_proxy_enabled():
+            cmd.extend(["--revprefix", f"/proxy/{port}"])
+
+        self.log.info(f'Starting xcube Server: {cmd}')
+        try:
+            process = subprocess.Popen(cmd)
+        except OSError as e:
+            message = f'Starting xcube Server failed: {e}'
+            self.log.error(message, error=e)
+            raise RuntimeError(message) from e
+
+        if process.returncode is not None:
+            message = f'Starting xcube Server failed: ' \
+                      f' exit with return code {process.returncode}'
+            self.log.error(message)
+            raise RuntimeError(message)
+
         server_server_info = self._dump_server_info(process.pid, port)
         return server_server_info
 
