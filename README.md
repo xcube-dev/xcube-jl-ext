@@ -13,6 +13,13 @@ The extension adds the following features to JupyterLab:
 2. Allows using xcube Server and Viewer from within Jupyter Notebooks, 
    even if JupyterLab is running remotely, i.e., spawned by JupyterHub.
 
+---
+**NOTE** 
+
+This extension is still experimental and has neither been packaged 
+nor deployed. Refer to the section **Development** below for dev installs.
+---
+
 ## Requirements
 
 - JupyterLab >= 3.0
@@ -52,12 +59,73 @@ jupyter labextension list
 
 ## Development
 
+### Setup environment
+
+Build [xcube Viewer](https://github.com/dcs4cop/xcube-viewer) resources
+from sources. Note you'll need `yarn` to be installed on your system.
+
+```bash
+cd ${projects}
+git clone https://github.com/dcs4cop/xcube-viewer.git
+cd xcube-viewer
+yarn install
+yarn build
+```
+
+Now set environment variable `XCUBE_VIEWER_PATH` to point
+to the xcube Viewer build directory:
+
+```env
+export XCUBE_VIEWER_PATH=${projects}/xcube-viewer/build
+```
+
 Make sure to have a source installation 
-of [xcube](https://github.com/dcs4cop/xcube) in an 
-xcube Python environment. Activate environment:
+of [xcube](https://github.com/dcs4cop/xcube) in a
+dedicated xcube Python environment. 
+
+```bash
+cd ${projects}
+git clone https://github.com/dcs4cop/xcube.git
+cd xcube
+mamba env create
+```
+
+Activate `xcube` environment:
 
 ```bash
 conda activate xcube
+```
+
+Update environment with required packages for building and running
+the JupyterLab extension.
+
+Note, the version of the `jupyterlab` in our development environment 
+should match the version of the target system. We also install
+`jupyter-server-proxy`.
+
+```bash
+mamba install -c conda-forge -c nodefaults jupyterlab=3.4.0 jupyter-server-proxy
+```
+
+Àlso install some packaging and build tools:
+
+```bash
+mamba install -c conda-forge -c nodefaults nodejs jupyter-packaging
+pip install build
+```
+
+Refer also to the [JupyterLab Extension Tutorial](https://jupyterlab.readthedocs.io/en/stable/extension/extension_tutorial.html)
+for the use these tools.
+
+### Install extension from sources
+
+Clone xcube JupyterLab extension repository next to the `xcube` source
+folder:
+
+```bash
+cd ${projects}
+git clone https://github.com/dcs4cop/xcube-jl-ext.git
+cd xcube-jl-ext
 ```
 
 Install the initial project dependencies and install the extension into 
@@ -75,6 +143,15 @@ This means our changes are automatically available in JupyterLab:
 ```bash
 jupyter labextension develop --overwrite .
 ```
+
+If successful, we can run JupyterLab and check if the extension
+works as expected:
+
+```bash
+jupyter lab
+```
+
+### Build after changes
 
 Run the following to rebuild your extension. This will be required
 after any changes of `package.json` or changes of frontend TypeScript 
