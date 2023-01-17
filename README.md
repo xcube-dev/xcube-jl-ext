@@ -89,13 +89,13 @@ cd ${projects}
 git clone https://github.com/dcs4cop/xcube.git
 cd xcube
 mamba env create
-pip install -ve .
 ```
 
-Activate `xcube` environment:
+Activate `xcube` environment and install xcube in editable (development) mode:
 
 ```bash
 conda activate xcube
+pip install -ve .
 ```
 
 Update environment with required packages for building and running
@@ -109,7 +109,7 @@ should match the version of the target system. We also install
 mamba install -c conda-forge -c nodefaults jupyterlab=3.4.0 jupyter-server-proxy
 ```
 
-Àlso install some packaging and build tools:
+Also install some packaging and build tools:
 
 ```bash
 mamba install -c conda-forge -c nodefaults nodejs jupyter-packaging
@@ -120,6 +120,12 @@ Refer also to the [JupyterLab Extension Tutorial](https://jupyterlab.readthedocs
 for the use these tools.
 
 ### Install extension from sources
+
+Make sure, `xcube` environent is active:
+
+```bash
+conda activate xcube
+```
 
 Clone xcube JupyterLab extension repository next to the `xcube` source
 folder:
