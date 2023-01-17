@@ -7,7 +7,6 @@ import tornado.httpclient
 import tornado.httputil
 import tornado.web
 
-from ..config import data_path
 from ..config import has_proxy_key
 from ..config import is_jupyter_server_proxy_enabled
 from ..config import lab_info_path
@@ -26,12 +25,11 @@ class LabInfoHandler(jupyter_server.base.handlers.APIHandler):
 
     # @tornado.web.authenticated
     def put(self):
-        if not data_path.is_dir():
-            data_path.mkdir()
+        if not lab_info_path.parent.exists():
+            lab_info_path.parent.mkdir(parents=True, exist_ok=True)
         lab_info = tornado.escape.json_decode(self.request.body)
         self._validate_lab_info(lab_info)
-        lab_info[has_proxy_key] = \
-            has_proxy = is_jupyter_server_proxy_enabled()
+        lab_info[has_proxy_key] = is_jupyter_server_proxy_enabled()
         self.log.info(f"Writing {lab_info_path}: {lab_info}")
         with lab_info_path.open(mode="w") as fp:
             json.dump(lab_info, fp)
@@ -61,4 +59,3 @@ class LabInfoHandler(jupyter_server.base.handlers.APIHandler):
             raise tornado.web.HTTPError(
                 400, reason="Missing or invalid Lab info in request body"
             )
-

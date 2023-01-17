@@ -70,8 +70,7 @@ class ServerHandler(jupyter_server.base.handlers.APIHandler):
             self.log.error(message)
             raise RuntimeError(message)
 
-        server_server_info = self._dump_server_info(process.pid, port)
-        return server_server_info
+        return self._dump_server_info(process.pid, port)
 
     @staticmethod
     def _stop_server(server_info: Dict[str, Any]):
@@ -90,6 +89,8 @@ class ServerHandler(jupyter_server.base.handlers.APIHandler):
             "pid": pid,
             "port": port,
         }
+        if not server_info_file.parent.exists():
+            server_info_file.parent.mkdir(parents=True, exist_ok=True)
         with server_info_file.open("w") as fp:
             json.dump(server_info, fp)
         return server_info
@@ -102,8 +103,8 @@ class ServerHandler(jupyter_server.base.handlers.APIHandler):
         return {}
 
     @staticmethod
-    def _get_server_state(server_state: Dict[str, Any]) -> Dict[str, Any]:
-        pid = server_state.get("pid")
+    def _get_server_state(server_info: Dict[str, Any]) -> Dict[str, Any]:
+        pid = server_info.get("pid")
         if isinstance(pid, int):
             try:
                 process = psutil.Process(pid)
@@ -111,7 +112,7 @@ class ServerHandler(jupyter_server.base.handlers.APIHandler):
                     "status": process.status(),
                     "name": process.name(),
                     "username": process.username(),
-                    **server_state
+                    **server_info
                 }
             except psutil.NoSuchProcess:
                 pass
