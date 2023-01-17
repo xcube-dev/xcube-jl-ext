@@ -18,6 +18,7 @@ The extension adds the following features to JupyterLab:
 
 This extension is still experimental and has neither been packaged 
 nor deployed. Refer to the section **Development** below for dev installs.
+
 ---
 
 ## Requirements
