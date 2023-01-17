@@ -89,6 +89,7 @@ cd ${projects}
 git clone https://github.com/dcs4cop/xcube.git
 cd xcube
 mamba env create
+pip install -ve .
 ```
 
 Activate `xcube` environment:
