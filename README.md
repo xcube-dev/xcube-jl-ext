@@ -121,7 +121,7 @@ for the use these tools.
 
 ### Install extension from sources
 
-Make sure, `xcube` environent is active:
+Make sure, `xcube` environment is active:
 
 ```bash
 conda activate xcube
@@ -161,9 +161,9 @@ jupyter lab
 
 ### Build after changes
 
-Run the following to rebuild your extension. This will be required
+Run the following to rebuild the extension. This will be required
 after any changes of `package.json` or changes of frontend TypeScript 
-files other resources.
+files and other resources.
 
 ```bash
 jlpm run build
