@@ -12,8 +12,9 @@ lab_url_key = "lab_url"
 has_proxy_key = "has_proxy"
 
 server_info_file = data_path / "server-info.json"
-server_log_file = data_path / "server-log.txt"
-server_config_file = Path(".") / "xcube-server.yaml"
+
+server_log_file = Path.cwd() / "xcube-server.log"
+server_config_file = Path.cwd() / "xcube-server.yaml"
 
 default_server_port = 9192
 
@@ -27,7 +28,7 @@ DataStores:
     StoreId: file
     StoreParams:
       root: .    
-      # max_depth = 1
+      # max_depth: 1
       # includes: []
       # excludes: []
       
@@ -38,7 +39,7 @@ DataStores:
   #  StoreId: s3
   #  StoreParams:
   #    root:  my-s3-bucket
-  #    # max_depth = 1
+  #    # max_depth: 1
   #    # includes: []
   #    # excludes: []
   #    storage_options:
