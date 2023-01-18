@@ -52,6 +52,7 @@ class ServerHandler(jupyter_server.base.handlers.APIHandler):
             "-v",
             "--config", f"{server_config_file}",
             "--port", f"{port}",
+            "--update-after", "1",
         ]
         if is_jupyter_server_proxy_enabled():
             cmd.extend(["--revprefix", f"/proxy/{port}"])
