@@ -104,6 +104,7 @@ async function activate(
             if (widget === null || widget.isDisposed) {
                 console.debug("Creating new JupyterLab widget xcube-jl-ext");
 
+                // TODO (forman): show indicator while starting server
                 const serverUrl = await getLocalServerUrl();
 
                 // Create a blank content widget inside of a MainAreaWidget
@@ -116,7 +117,8 @@ async function activate(
                 // iframe.src = "https://viewer.earthsystemdatalab.net/";
                 iframe.src = `${serverUrl}/viewer/?serverUrl=${serverUrl}`
                     + "&serverName=xcube+JupyterLab+Integration"
-                    + "&serverId=jupyterlab";
+                    + "&serverId=jupyterlab"
+                    + "&compact=1";
                 content.node.appendChild(iframe);
 
                 widget = new MainAreaWidget({content});
