@@ -3,10 +3,12 @@ import { PageConfig } from '@jupyterlab/coreutils';
 import { ILauncher } from "@jupyterlab/launcher";
 import { ISettingRegistry } from "@jupyterlab/settingregistry";
 import { ServerConnection } from '@jupyterlab/services';
-import { ICommandPalette, MainAreaWidget, WidgetTracker } from "@jupyterlab/apputils";
+import { ICommandPalette, MainAreaWidget, showErrorMessage, WidgetTracker } from "@jupyterlab/apputils";
 import { Widget } from "@lumino/widgets";
-import { requestAPI } from './handler';
+import { getServer, getViewerUrl, ServerStatus, setLabInfo } from './api';
 
+
+const ERROR_BOX_TITLE = "xcube Extension Error";
 
 async function activate(
     app: JupyterFrontEnd,
@@ -25,71 +27,34 @@ async function activate(
     console.debug("  shareUrl:", PageConfig.getShareUrl());
     console.debug("  treeUrl:", PageConfig.getTreeUrl());
 
-    const settings = ServerConnection.makeSettings();
-    console.debug("  serverSettings:", settings);
+    const serverSettings = ServerConnection.makeSettings();
+    // console.debug("  serverSettings:", serverSettings);
 
-    let hasServerProxy: boolean | undefined;
-
-    const request = {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            lab_url: settings.baseUrl
-        })
-    };
-
-    requestAPI<any>('labinfo', request, settings)
-        .then(labInfo => {
-            console.log(labInfo);
-            hasServerProxy = labInfo.has_proxy;
-        })
-        .catch(reason => {
-            console.error(
-                `xcube_jl_ext server extension problem:\n${reason}`
-            );
-        });
+    let hasServerProxy: boolean = false;
+    try {
+        const labInfo = await setLabInfo(serverSettings);
+        hasServerProxy = !!labInfo.has_proxy;
+    } catch (error) {
+        await showErrorMessage(ERROR_BOX_TITLE, error);
+        return;
+    }
 
     if (settingRegistry !== null) {
-        settingRegistry
-            .load(plugin.id)
-            .then(settings => {
-                console.debug(
-                    "xcube-jl-ext settings loaded:",
-                    settings.composite
-                );
-            })
-            .catch(reason => {
-                console.error(
-                    "Failed to load settings for xcube-jl-ext.",
-                    reason
-                );
-            });
+        let settings: ISettingRegistry.ISettings;
+        try {
+            settings = await settingRegistry.load(plugin.id);
+            console.debug(
+                "xcube-jl-ext settings loaded:",
+                settings.composite
+            );
+        } catch (error) {
+            console.error(
+                "Failed to load settings for xcube-jl-ext.",
+                error
+            );
+        }
     }
 
-    const getLocalServerUrl = async (): Promise<string> => {
-        const serverState = await requestAPI<any>('server', {method: "PUT"}, settings);
-        console.debug("xcube-jl-ext server state:", serverState);
-        const port = serverState.port;
-        const serverUrl = hasServerProxy
-            ? `${settings.baseUrl}proxy/${port}`
-            : `http://127.0.0.1:${port}`;
-        let error;
-        for (let i = 0; i < 100; i++) {
-            try {
-                const response = await fetch(serverUrl, {});
-                if (response.ok) {
-                    return serverUrl;
-                }
-                error = response.statusText;
-            } catch (e) {
-                error = e;
-                console.error(e);
-            }
-        }
-        throw new Error(error);
-    }
 
     let widget: MainAreaWidget | null = null;
     let tracker: WidgetTracker<MainAreaWidget> | null = null;
@@ -104,10 +69,18 @@ async function activate(
             if (widget === null || widget.isDisposed) {
                 console.debug("Creating new JupyterLab widget xcube-jl-ext");
 
-                // TODO (forman): show indicator while starting server
-                const serverUrl = await getLocalServerUrl();
+                let serverStatus: ServerStatus;
+                try {
+                    // TODO (forman): show indicator while starting server
+                    serverStatus = await getServer(hasServerProxy, serverSettings)
+                } catch (error) {
+                    await showErrorMessage(ERROR_BOX_TITLE, error);
+                    return;
+                }
 
-                // Create a blank content widget inside of a MainAreaWidget
+                const serverUrl = serverStatus.url;
+
+                // Create a blank content widget inside a MainAreaWidget
                 const content = new Widget();
                 const iframe = document.createElement('iframe');
                 iframe.style.position = "absolute";
@@ -115,10 +88,7 @@ async function activate(
                 iframe.style.height = "100%";
                 iframe.style.border = "none";
                 // iframe.src = "https://viewer.earthsystemdatalab.net/";
-                iframe.src = `${serverUrl}/viewer/?serverUrl=${serverUrl}`
-                    + "&serverName=xcube+JupyterLab+Integration"
-                    + "&serverId=jupyterlab"
-                    + "&compact=1";
+                iframe.src = getViewerUrl(serverUrl);
                 content.node.appendChild(iframe);
 
                 widget = new MainAreaWidget({content});
@@ -190,3 +160,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
 };
 
 export default plugin;
+
+
+

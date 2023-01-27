@@ -113,6 +113,7 @@ class ServerHandler(jupyter_server.base.handlers.APIHandler):
                     "status": process.status(),
                     "name": process.name(),
                     "username": process.username(),
+                    "cmdline": process.cmdline(),
                     **server_info
                 }
             except psutil.NoSuchProcess:
