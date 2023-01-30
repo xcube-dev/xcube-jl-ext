@@ -1,6 +1,6 @@
 import { URLExt } from '@jupyterlab/coreutils';
 import { ServerConnection } from '@jupyterlab/services';
-import { callUntil } from "./util";
+import { callUntil, UnrecoverableError } from "./util";
 
 const API_NAMESPACE = "xcube";
 
@@ -17,6 +17,8 @@ export interface ServerState {
     name: string | null;
     username: string | null;
     returncode: number | null;
+    stdout: string | null;
+    stderr: string | null;
 }
 
 export interface ServerStatus {
@@ -87,17 +89,20 @@ function assertServerStateOk(serverState: ServerState) {
         return;  // Ok!
     }
     console.debug("xcube-jl-ext server state:", serverState);
-    if (typeof serverState.returncode === "number") {
-        throw new Error(
-            `xcube server exited with code "${serverState.returncode}"`
-            + ` for command line "${serverState.cmdline}".`
-        );
-    } else {
-        throw new Error(
-            `xcube server status is "${serverState.status}"`
-            + ` for command line "${serverState.cmdline}".`
-        );
+    let message = "xcube server could not be started or terminated unexpectedly. ";
+    if (typeof serverState.stderr === "string") {
+        message += `Message: ${serverState.stderr}. `;
     }
+    if (typeof serverState.returncode === "number") {
+        message += `Exit code ${serverState.returncode}. `;
+    }
+    if (typeof serverState.status === "string") {
+        message += `Status: ${serverState.status}. `;
+    }
+    if (Array.isArray(serverState.cmdline)) {
+        message += `Command-line: "${serverState.cmdline.join(" ")}". `;
+    }
+    throw new UnrecoverableError(message);
 }
 
 

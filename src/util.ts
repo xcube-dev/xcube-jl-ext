@@ -29,9 +29,24 @@ type Handler<T> = (
 ) => void;
 
 /**
+ * Throw this error, if you want `callUntil()` to exit immediately.
+ */
+export class UnrecoverableError extends Error {
+
+    readonly error?: Error;
+
+    constructor(message?: string, error?: Error) {
+        super(message);
+        this.error = error;
+    }
+}
+
+
+/**
  * Call asynchronous function `fetchValue` until it returns a value without throwing an exception.
  * If it throws an exception, it will be executed after a delay of `timeout / maxCount`.
- * This is repeated until `maxCount` is reached. Eventually, the last exception will be thrown.
+ * This is repeated until `maxCount` is reached or a `UnrecoverableError` is thrown.
+ * Eventually, the last exception will be thrown.
  *
  * @param fetchValue The asynchronous function to be called.
  * @param timeout Overall timeout in milliseconds.
@@ -47,10 +62,12 @@ export async function callUntil<T>(fetchValue: () => Promise<T>, timeout: number
                 resolve(value)
             })
             .catch(error => {
-                if (count < maxCount) {
-                    delayedHandler(resolve, reject, count + 1);
-                } else {
+                if (error instanceof UnrecoverableError) {
+                    reject(error.error || error);
+                } else if (count >= maxCount) {
                     reject(error);
+                } else {
+                    delayedHandler(resolve, reject, count + 1);
                 }
             });
     };
@@ -63,5 +80,6 @@ export async function callUntil<T>(fetchValue: () => Promise<T>, timeout: number
         (resolve, reject) => delayedHandler(resolve, reject, 1)
     );
 }
+
 
 
