@@ -74,6 +74,7 @@ async function activate(
                     // TODO (forman): show indicator while starting server
                     serverStatus = await getServer(hasServerProxy, serverSettings)
                 } catch (error) {
+                    console.error("Argh:", error);
                     await showErrorMessage(ERROR_BOX_TITLE, error);
                     return;
                 }

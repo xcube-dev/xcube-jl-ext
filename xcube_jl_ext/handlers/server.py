@@ -1,121 +1,130 @@
-import json
-import subprocess
-from typing import Any, Dict
+import sys
+from typing import Any, Dict, Optional, Tuple
 
 import jupyter_server.base.handlers
 import psutil
+import tornado.web
 
 from ..config import default_server_config
 from ..config import default_server_port
 from ..config import is_jupyter_server_proxy_enabled
 from ..config import server_config_file
-from ..config import server_info_file
 from ..config import server_log_file
+
+XcServerInfo = Tuple[Optional[psutil.Popen], Optional[int], List[str]]
 
 
 # noinspection PyAbstractClass
 class ServerHandler(jupyter_server.base.handlers.APIHandler):
+    """Manage a single xcube server process."""
 
     # @tornado.web.authenticated
     def get(self):
-        server_info = self._load_server_info()
-        server_state = self._get_server_state(server_info)
-        self.finish(server_state)
+        """Respond with server's process state.
+        If there is no current server process, respond with status code 404.
+        """
+        self.finish(self.xc_server_state)
 
     # @tornado.web.authenticated
     def put(self):
-        server_info = self._load_server_info()
-        server_state = self._get_server_state(server_info)
-        if server_state.get("status") != "running":
-            server_info = self._start_server()
-            server_state = self._get_server_state(server_info)
-        self.finish(server_state)
+        """Start a new xcube server.
+        If the server is already running, do nothing.
+        Respond with server's process state.
+        If the server could not be started, respond with status code 500.
+        """
+        self._start_server()
+        self.finish(self.xc_server_state)
 
     # @tornado.web.authenticated
     def delete(self):
-        server_info = self._load_server_info()
-        self._stop_server(server_info)
-        self.finish({})
+        """Terminate a running xcube server.
+        Respond with server's process state.
+        If there is no current server process, respond with status code 404.
+        """
+        self._stop_server()
+        self.finish(self.xc_server_state)
+
+    @property
+    def xc_server_state(self) -> Dict[str, Any]:
+        process, port, cmdline = self.xc_server_info
+        if process is None:
+            raise tornado.web.HTTPError(
+                status_code=404,
+                log_message='xcube server process not started yet.'
+            );
+        if not process.is_running():
+            raise tornado.web.HTTPError(
+                status_code=404,
+                log_message='xcube server could not be started.'
+            );
+
+        # TODO (forman): include stdout + stderr
+        server_state = {
+            "port": port,
+            "pid": process.pid,
+            "returncode": process.returncode,
+        }
+        for attr, default_value in [
+            ("status", "gone"),
+            ("cmdline", cmdline),
+            ("name", None),
+            ("username", None),
+        ]:
+            try:
+                server_state[attr] = getattr(process, attr)()
+            except psutil.NoSuchProcess:
+                server_state[attr] = default_value
+        return server_state
+
+    @property
+    def xc_server_info(self) -> XcServerInfo:
+        try:
+            return self.settings["xcube_server_info"]
+        except KeyError:
+            return None, None, []
+
+    @xc_server_info.setter
+    def xc_server_info(self, value: XcServerInfo):
+        self.settings["xcube_server_info"] = value
 
     def _start_server(self):
+        process, _, _ = self.xc_server_info
+        if process is not None and process.is_running():
+            return
+
         if not server_config_file.exists():
             with server_config_file.open("w") as f:
                 f.write(default_server_config)
 
+        # TODO (forman): Get free port
         port = default_server_port
 
-        cmd = [
-            "xcube",
+        cmdline = [
+            sys.executable,
+            "-m",
+            "xcube.cli.main",
             "--logfile", f"{server_log_file}",
             "--loglevel", "DETAIL",
             "serve",
             "-v",
-            "--config", f"{server_config_file}",
+            "--config", f"{server_config_file}x",
             "--port", f"{port}",
             "--update-after", "1",
         ]
         if is_jupyter_server_proxy_enabled():
-            cmd.extend(["--revprefix", f"/proxy/{port}"])
+            cmdline.extend(["--revprefix", f"/proxy/{port}"])
 
-        self.log.info(f'Starting xcube Server: {cmd}')
+        self.log.info(f'Starting xcube Server: {cmdline}')
         try:
-            process = subprocess.Popen(cmd)
+            process = psutil.Popen(cmdline)
+            self.xc_server_info = process, port, cmdline
         except OSError as e:
-            message = f'Starting xcube Server failed: {e}'
-            self.log.error(message, error=e)
-            raise RuntimeError(message) from e
+            raise tornado.web.HTTPError(
+                status_code=500,
+                log_message=f'Starting xcube Server failed: {e}'
+            ) from e
 
-        if process.returncode is not None:
-            message = f'Starting xcube Server failed: ' \
-                      f' exit with return code {process.returncode}'
-            self.log.error(message)
-            raise RuntimeError(message)
-
-        return self._dump_server_info(process.pid, port)
-
-    @staticmethod
-    def _stop_server(server_info: Dict[str, Any]):
-        pid = server_info.get("pid")
-        if isinstance(pid, int):
-            try:
-                process = psutil.Process(pid)
-                process.terminate()
-            except psutil.NoSuchProcess:
-                pass
-        server_info_file.unlink()
-
-    @staticmethod
-    def _dump_server_info(pid: int, port: int) -> Dict[str, Any]:
-        server_info = {
-            "pid": pid,
-            "port": port,
-        }
-        if not server_info_file.parent.exists():
-            server_info_file.parent.mkdir(parents=True, exist_ok=True)
-        with server_info_file.open("w") as fp:
-            json.dump(server_info, fp)
-        return server_info
-
-    @staticmethod
-    def _load_server_info() -> Dict[str, Any]:
-        if server_info_file.exists():
-            with server_info_file.open() as fp:
-                return json.load(fp)
-        return {}
-
-    @staticmethod
-    def _get_server_state(server_info: Dict[str, Any]) -> Dict[str, Any]:
-        pid = server_info.get("pid")
-        if isinstance(pid, int):
-            try:
-                process = psutil.Process(pid)
-                return {
-                    "status": process.status(),
-                    "name": process.name(),
-                    "username": process.username(),
-                    "cmdline": process.cmdline(),
-                    **server_info
-                }
-            except psutil.NoSuchProcess:
-                pass
-        return {}
+    def _stop_server(self, server_info: Dict[str, Any]):
+        process, _, _ = self.xc_server_info
+        if process is not None:
+            process.kill()

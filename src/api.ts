@@ -9,16 +9,14 @@ export interface LabInfo {
     has_proxy?: boolean;
 }
 
-export interface ServerInfo {
-    pid: number;
+export interface ServerState {
     port: number;
-}
-
-export interface ServerState extends ServerInfo {
+    pid: number;
     status: string;
-    name: string;
-    username: string;
-    cmdline: string;
+    cmdline: string[];
+    name: string | null;
+    username: string | null;
+    returncode: number | null;
 }
 
 export interface ServerStatus {
@@ -51,18 +49,12 @@ export async function setLabInfo(settings: ServerConnection.ISettings): Promise<
 }
 
 /**
- * Start xcube Server and return, once it is ready to serve.
+ * Start xcube server and return, once it is ready to serve.
  */
 export async function getServer(hasServerProxy: boolean,
                                 settings: ServerConnection.ISettings): Promise<ServerStatus> {
     const serverState = await startServer(settings);
-    console.debug("xcube-jl-ext server state:", serverState);
-    if (serverState.status !== "running") {
-        throw new Error(
-            `xcube Server status is "${serverState.status}"`
-            + ` for command line "${serverState.cmdline}".`
-        );
-    }
+    assertServerStateOk(serverState);
 
     const serverPort = serverState.port;
     const serverUrl = hasServerProxy
@@ -70,6 +62,8 @@ export async function getServer(hasServerProxy: boolean,
         : `http://127.0.0.1:${serverPort}`;
 
     const fetchServerInfo = async (): Promise<any> => {
+        const serverState = await getServerState();
+        assertServerStateOk(serverState);
         const response = await fetch(serverUrl);
         if (!response.ok) {
             throw new ServerConnection.ResponseError(response);
@@ -77,7 +71,7 @@ export async function getServer(hasServerProxy: boolean,
         return response.json();
     }
 
-    const serverResponse = await callUntil(fetchServerInfo, 5000, 10);
+    const serverResponse = await callUntil(fetchServerInfo, 3000, 10);
     console.info('xcube server response:', serverResponse);
 
     return {
@@ -88,14 +82,37 @@ export async function getServer(hasServerProxy: boolean,
 }
 
 
+function assertServerStateOk(serverState: ServerState) {
+    if (serverState.status === "running") {
+        return;  // Ok!
+    }
+    console.debug("xcube-jl-ext server state:", serverState);
+    if (typeof serverState.returncode === "number") {
+        throw new Error(
+            `xcube server exited with code "${serverState.returncode}"`
+            + ` for command line "${serverState.cmdline}".`
+        );
+    } else {
+        throw new Error(
+            `xcube server status is "${serverState.status}"`
+            + ` for command line "${serverState.cmdline}".`
+        );
+    }
+}
+
+
 /**
- * Start xcube Server.
+ * Start xcube server.
  */
 async function startServer(settings?: ServerConnection.ISettings): Promise<ServerState> {
-    const request = {
-        method: "PUT"
-    };
-    return callAPI<ServerState>('server', request, settings);
+    return callAPI<ServerState>('server', {method: "PUT"}, settings);
+}
+
+/**
+ * Get xcube server state.
+ */
+async function getServerState(settings?: ServerConnection.ISettings): Promise<ServerState> {
+    return callAPI<ServerState>('server', {method: "GET"}, settings);
 }
 
 

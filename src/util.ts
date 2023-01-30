@@ -22,6 +22,12 @@
  * SOFTWARE.
  */
 
+type Handler<T> = (
+    resolve: (value: T) => any,
+    reject: (reason: any) => void,
+    count: number
+) => void;
+
 /**
  * Call asynchronous function `fetchValue` until it returns a value without throwing an exception.
  * If it throws an exception, it will be executed after a delay of `timeout / maxCount`.
@@ -34,22 +40,28 @@
 export async function callUntil<T>(fetchValue: () => Promise<T>, timeout: number, maxCount: number): Promise<T> {
     const delay = timeout / maxCount;
 
-    const handler = (resolve: (v: T) => any, count: number) => {
-        console.debug(`Fetching ${fetchValue} (attempt ${count}/${maxCount})`)
+    const handler: Handler<T> = (resolve, reject, count) => {
+        console.debug(`Fetching ${fetchValue.name}() (attempt ${count}/${maxCount})`)
         fetchValue()
-            .then(value => resolve(value))
+            .then(value => {
+                resolve(value)
+            })
             .catch(error => {
-                if (count <= maxCount) {
-                    setTimeout(() => handler(resolve, count + 1), delay);
+                if (count < maxCount) {
+                    delayedHandler(resolve, reject, count + 1);
                 } else {
-                    throw error;
+                    reject(error);
                 }
             });
     };
 
-    return new Promise(resolve => {
-        setTimeout(() => handler(resolve, 0), delay);
-    });
+    const delayedHandler: Handler<T> = (resolve, reject, count) => {
+        setTimeout(() => handler(resolve, reject, count), delay)
+    };
+
+    return new Promise(
+        (resolve, reject) => delayedHandler(resolve, reject, 1)
+    );
 }
 
 
