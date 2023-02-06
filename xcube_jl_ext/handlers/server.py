@@ -140,7 +140,7 @@ class ServerHandler(jupyter_server.base.handlers.APIHandler):
             "--loglevel", "DETAIL",
             "serve",
             "-v",
-            "--config", f"{server_config_file}x",
+            "--config", f"{server_config_file}",
             "--port", f"{port}",
             "--update-after", "1",
         ]
