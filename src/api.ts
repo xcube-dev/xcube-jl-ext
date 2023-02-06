@@ -85,7 +85,7 @@ export async function getServer(hasServerProxy: boolean,
 
 
 function assertServerStateOk(serverState: ServerState) {
-    if (serverState.status === "running") {
+    if (serverState.status === "running" || serverState.status === "sleeping") {
         return;  // Ok!
     }
     console.debug("xcube-jl-ext server state:", serverState);
