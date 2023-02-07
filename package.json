@@ -1,6 +1,6 @@
 {
   "name": "xcube-jl-ext",
-  "version": "0.1.0.dev1",
+  "version": "0.1.0.dev2",
   "description": "xcube JupyterLab integration",
   "keywords": [
     "xcube",
@@ -56,13 +56,13 @@
     "watch:labextension": "jupyter labextension watch ."
   },
   "dependencies": {
-    "@jupyterlab/application": "^3.4.8",
-    "@jupyterlab/apputils": "^3.4.8",
-    "@jupyterlab/coreutils": "^5.1.0",
-    "@jupyterlab/launcher": "^3.4.8",
-    "@jupyterlab/services": "^6.1.0",
-    "@jupyterlab/settingregistry": "^3.1.0",
-    "@lumino/widgets": "^1.36.0"
+    "@jupyterlab/application": "^3.6.1",
+    "@jupyterlab/apputils": "^3.6.1",
+    "@jupyterlab/coreutils": "^5.6.1",
+    "@jupyterlab/launcher": "^3.6.1",
+    "@jupyterlab/services": "^6.6.1",
+    "@jupyterlab/settingregistry": "^3.6.1",
+    "@lumino/widgets": "^1.37.1"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",
