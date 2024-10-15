@@ -1,4 +1,5 @@
 import importlib.metadata
+import json
 from pathlib import Path
 
 import jupyter_core.paths
