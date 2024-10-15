@@ -9,4 +9,8 @@
 * Changed occurrences of URL prefix `https://github.com/dcs4cop/` into 
   `https://github.com/xcube-dev/`.
 
+* Fixed `README.md` in that 
+  [xcube Viewer](https://github.com/xcube-dev/xcube.git) now uses `npm` 
+  and no longer not `yarn`.
+
 <!-- <END NEW CHANGELOG ENTRY> -->
