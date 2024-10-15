@@ -23,24 +23,22 @@
  */
 
 type Handler<T> = (
-    resolve: (value: T) => any,
-    reject: (reason: any) => void,
-    count: number
+  resolve: (value: T) => any,
+  reject: (reason: any) => void,
+  count: number
 ) => void;
 
 /**
  * Throw this error, if you want `callUntil()` to exit immediately.
  */
 export class UnrecoverableError extends Error {
+  readonly error?: Error;
 
-    readonly error?: Error;
-
-    constructor(message?: string, error?: Error) {
-        super(message);
-        this.error = error;
-    }
+  constructor(message?: string, error?: Error) {
+    super(message);
+    this.error = error;
+  }
 }
-
 
 /**
  * Call asynchronous function `fetchValue` until it returns a value without throwing an exception.
@@ -52,34 +50,35 @@ export class UnrecoverableError extends Error {
  * @param timeout Overall timeout in milliseconds.
  * @param maxCount Maximum number of failures.
  */
-export async function callUntil<T>(fetchValue: () => Promise<T>, timeout: number, maxCount: number): Promise<T> {
-    const delay = timeout / maxCount;
+export async function callUntil<T>(
+  fetchValue: () => Promise<T>,
+  timeout: number,
+  maxCount: number
+): Promise<T> {
+  const delay = timeout / maxCount;
 
-    const handler: Handler<T> = (resolve, reject, count) => {
-        console.debug(`Fetching ${fetchValue.name}() (attempt ${count}/${maxCount})`)
-        fetchValue()
-            .then(value => {
-                resolve(value)
-            })
-            .catch(error => {
-                if (error instanceof UnrecoverableError) {
-                    reject(error.error || error);
-                } else if (count >= maxCount) {
-                    reject(error);
-                } else {
-                    delayedHandler(resolve, reject, count + 1);
-                }
-            });
-    };
-
-    const delayedHandler: Handler<T> = (resolve, reject, count) => {
-        setTimeout(() => handler(resolve, reject, count), delay)
-    };
-
-    return new Promise(
-        (resolve, reject) => delayedHandler(resolve, reject, 1)
+  const handler: Handler<T> = (resolve, reject, count) => {
+    console.debug(
+      `Fetching ${fetchValue.name}() (attempt ${count}/${maxCount})`
     );
+    fetchValue()
+      .then(value => {
+        resolve(value);
+      })
+      .catch(error => {
+        if (error instanceof UnrecoverableError) {
+          reject(error.error || error);
+        } else if (count >= maxCount) {
+          reject(error);
+        } else {
+          delayedHandler(resolve, reject, count + 1);
+        }
+      });
+  };
+
+  const delayedHandler: Handler<T> = (resolve, reject, count) => {
+    setTimeout(() => handler(resolve, reject, count), delay);
+  };
+
+  return new Promise((resolve, reject) => delayedHandler(resolve, reject, 1));
 }
-
-
-
