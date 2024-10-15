@@ -10,13 +10,14 @@ for the JupyterLab frontend extension.
 The extension adds the following features to JupyterLab:
 
 1. Allows running a configurable xcube Viewer as widget in the JupyterLab.
-2. Allows using xcube Server and Viewer from within Jupyter Notebooks, 
+2. Allows using xcube Server and Viewer from within Jupyter Notebooks,
    even if JupyterLab is running remotely, i.e., spawned by JupyterHub.
 
 ---
-**NOTE** 
 
-This extension is still experimental and has neither been packaged 
+**NOTE**
+
+This extension is still experimental and has neither been packaged
 nor deployed. Refer to the section **Development** below for dev installs.
 
 ---
@@ -80,9 +81,9 @@ to the xcube Viewer build directory:
 export XCUBE_VIEWER_PATH=${projects}/xcube-viewer/build
 ```
 
-Make sure to have a source installation 
+Make sure to have a source installation
 of [xcube](https://github.com/dcs4cop/xcube) in a
-dedicated xcube Python environment. 
+dedicated xcube Python environment.
 
 ```bash
 cd ${projects}
@@ -101,7 +102,7 @@ pip install -ve .
 Update environment with required packages for building and running
 the JupyterLab extension.
 
-Note, the version of the `jupyterlab` in our development environment 
+Note, the version of the `jupyterlab` in our development environment
 should match the version of the target system. We also install
 `jupyter-server-proxy`.
 
@@ -136,16 +137,16 @@ git clone https://github.com/dcs4cop/xcube-jl-ext.git
 cd xcube-jl-ext
 ```
 
-Install the initial project dependencies and install the extension into 
-the JupyterLab environment. Copy the frontend part of the extension into 
-JupyterLab. We can run this pip install command again every time we make 
+Install the initial project dependencies and install the extension into
+the JupyterLab environment. Copy the frontend part of the extension into
+JupyterLab. We can run this pip install command again every time we make
 a change to copy the change into JupyterLab.
 
 ```bash
 pip install -ve .
 ```
 
-Create a symbolic link from JupyterLab to our source directory. 
+Create a symbolic link from JupyterLab to our source directory.
 This means our changes are automatically available in JupyterLab:
 
 ```bash
@@ -162,21 +163,21 @@ jupyter lab
 ### Build after changes
 
 Run the following to rebuild the extension. This will be required
-after any changes of `package.json` or changes of frontend TypeScript 
+after any changes of `package.json` or changes of frontend TypeScript
 files and other resources.
 
 ```bash
 jlpm run build
 ```
 
-If you wish to avoid building after each change, you can run the 
+If you wish to avoid building after each change, you can run the
 
 ```bash
 jlpm run watch
 ```
 
-from your extension directory in another terminal. 
-This will automatically compile the TypeScript files as they 
+from your extension directory in another terminal.
+This will automatically compile the TypeScript files as they
 are changed and saved.
 
 ## Contributing
