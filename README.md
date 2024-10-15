@@ -1,7 +1,7 @@
 # xcube_jl_ext
 
-[![Github Actions Status](https://github.com/dcs4cop/xcube-jl-ext/workflows/Build/badge.svg)](https://github.com/dcs4cop/xcube-jl-ext/actions/workflows/build.yml)
-[xcube](https://github.com/dcs4cop/xcube) JupyterLab integration
+[![Github Actions Status](https://github.com/xcube-dev/xcube-jl-ext/workflows/Build/badge.svg)](https://github.com/xcube-dev/xcube-jl-ext/actions/workflows/build.yml)
+[xcube](https://github.com/xcube-dev/xcube) JupyterLab integration
 
 This extension is composed of a Python package named `xcube_jl_ext`
 for the JupyterLab server extension and a NPM package named `xcube-jl-ext`
@@ -62,15 +62,15 @@ jupyter labextension list
 
 ### Setup environment
 
-Build [xcube Viewer](https://github.com/dcs4cop/xcube-viewer) resources
-from sources. Note you'll need `yarn` to be installed on your system.
+Build [xcube Viewer](https://github.com/xcube-dev/xcube-viewer) resources
+from sources. Note you'll need `npm` to be installed on your system.
 
 ```bash
 cd ${projects}
-git clone https://github.com/dcs4cop/xcube-viewer.git
+git clone https://github.com/xcube-dev/xcube-viewer.git
 cd xcube-viewer
-yarn install
-yarn build
+npm install
+npm run build
 ```
 
 Now set environment variable `XCUBE_VIEWER_PATH` to point
@@ -81,12 +81,12 @@ export XCUBE_VIEWER_PATH=${projects}/xcube-viewer/build
 ```
 
 Make sure to have a source installation 
-of [xcube](https://github.com/dcs4cop/xcube) in a
+of [xcube](https://github.com/xcube-dev/xcube) in a
 dedicated xcube Python environment. 
 
 ```bash
 cd ${projects}
-git clone https://github.com/dcs4cop/xcube.git
+git clone https://github.com/xcube-dev/xcube.git
 cd xcube
 mamba env create
 ```
@@ -132,7 +132,7 @@ folder:
 
 ```bash
 cd ${projects}
-git clone https://github.com/dcs4cop/xcube-jl-ext.git
+git clone https://github.com/xcube-dev/xcube-jl-ext.git
 cd xcube-jl-ext
 ```
 
